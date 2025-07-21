@@ -6,18 +6,18 @@ use webcam::Webcam;
 mod overlay;
 
 mod controls;
-use controls::{ControlCtx, Controls};
+use controls::{ControlState, Controls};
 
 #[function_component(App)]
 fn app() -> Html {
-    let control_ctx = use_state(|| ControlCtx { fit_screen: false });
+    let store = use_reducer(ControlState::new);
 
     html! {
         <div>
-            <ContextProvider<UseStateHandle<ControlCtx>> context={control_ctx.clone()}>
+            <ContextProvider<UseReducerHandle<ControlState>> context={store}>
                 <Controls />
                 <Webcam />
-            </ContextProvider<UseStateHandle<ControlCtx>>>
+            </ContextProvider<UseReducerHandle<ControlState>>>
         </div>
     }
 }

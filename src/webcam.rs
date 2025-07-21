@@ -9,12 +9,12 @@ use crate::controls;
 #[function_component(Webcam)]
 pub fn webcam() -> Html {
     let controls =
-        use_context::<UseStateHandle<controls::ControlCtx>>().expect("ControlCtx not found");
+        use_context::<UseReducerHandle<controls::ControlState>>().expect("ControlCtx not found");
     let video_ref = use_node_ref();
 
     {
         let video_ref = video_ref.clone();
-        use_effect(move || {
+        use_effect_with((), move |_| {
             let constraints = MediaStreamConstraints::new();
             constraints.set_video(&JsValue::TRUE);
 
