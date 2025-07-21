@@ -4,6 +4,7 @@ mod webcam;
 use webcam::Webcam;
 
 mod overlay;
+use overlay::Overlay;
 
 mod controls;
 use controls::{ControlState, Controls};
@@ -17,6 +18,7 @@ fn app() -> Html {
             <ContextProvider<UseReducerHandle<ControlState>> context={store}>
                 <Controls />
                 <Webcam />
+                <Overlay />
             </ContextProvider<UseReducerHandle<ControlState>>>
         </div>
     }

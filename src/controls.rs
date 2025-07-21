@@ -7,6 +7,7 @@ pub struct ControlState {
     pub fit_screen: bool,
     pub show_overlay: bool,
     pub opacity: f64,
+    pub image_src: Option<String>,
 }
 
 impl ControlState {
@@ -15,6 +16,7 @@ impl ControlState {
             fit_screen: false,
             show_overlay: true,
             opacity: 1.0,
+            image_src: None,
         }
     }
 }
@@ -23,6 +25,7 @@ pub enum ControlsAction {
     ToggleFitScreen,
     ToggleOverlay,
     SetOpacity(f64),
+    SetImage(String),
 }
 
 impl Reducible for ControlState {
@@ -35,6 +38,7 @@ impl Reducible for ControlState {
             ControlsAction::ToggleFitScreen => new.fit_screen = !new.fit_screen,
             ControlsAction::ToggleOverlay => new.show_overlay = !new.show_overlay,
             ControlsAction::SetOpacity(opacity) => new.opacity = opacity,
+            ControlsAction::SetImage(url) => new.image_src = Some(url),
         }
 
         new.into()
@@ -59,9 +63,21 @@ pub fn controls() -> Html {
         })
     };
 
+    let on_file_upload = {
+        let store = controls.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            if let Some(file) = input.files().and_then(|files| files.get(0)) {
+                let url = web_sys::Url::create_object_url_with_blob(&file)
+                    .expect("Failed to create object URL");
+                store.dispatch(ControlsAction::SetImage(url));
+            }
+        })
+    };
+
     html! {
-        <div class="controls">
-            <input type="checkbox" checked={controls.fit_screen} onchange={on_toggle} /> <label>{"Fit to Screen"}</label>
+        <div class="controls" style="position: fixed; top: 10px; left: 10px; z-index: 10;">
+            <input id="screenfit" type="checkbox" checked={controls.fit_screen} onchange={on_toggle} /> <label for="screenfit">{"Fit to Screen"}</label>
             <input
                 id="opacity"
                 type="range"
@@ -71,6 +87,7 @@ pub fn controls() -> Html {
                 value={controls.opacity.to_string()}
                 oninput={on_opacity_input}
               />
+            <input type="file" accept="image/*" oninput={on_file_upload} />
         </div>
     }
 }
