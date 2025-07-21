@@ -16,35 +16,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-    deploy:
-        environment:
-            name: github-pages
-            url: ${{ steps.deployment.outputs.page_url }}
-        runs-on: ubuntu-latest
-        steps:
-        - name: Checkout
-          uses: actions/checkout@v4
-    
-        - name: Set up Rust
-          uses: actions-rs/toolchain@v1
-          with:
-            toolchain: stable
-            override: true
-    
-        - name: Install Trunk
-          run: cargo install trunk
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
 
-        - name: add wasm32 target
-          run: rustup target add wasm32-unknown-unknown
-    
-        - name: Build
-          run: trunk build --release
-    
-        - name: Upload Artifact
-          uses: actions/upload-artifact@v4
-          with:
-            name: 'github-pages'
-            path: 'dist'
-        - name: Deploy to GitHub Pages
-          id: deployment
-          uses: actions/deploy-pages@v4
+    - name: Cache Cargo (registry, git, target, trunk)
+      uses: actions/cache@v4
+      with:
+        path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin/trunk
+            target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+            ${{ runner.os }}-cargo-
+
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
+    - name: Install Trunk
+      run: |
+        if ! command -v trunk > /dev/null; then
+          cargo install trunk
+        else
+          echo "Trunk is cached."
+        fi
+
+    - name: Add wasm32 target
+      run: rustup target add wasm32-unknown-unknown
+
+    - name: Build
+      run: trunk build --release
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: 'github-pages'
+        path: 'dist'
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
